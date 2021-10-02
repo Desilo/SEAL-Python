@@ -37,22 +37,22 @@ This is a python binding for the Microsoft SEAL library.
 
   # Build the SEAL lib
   cd SEAL
-  cmake -S . -B build -DSEAL_USE_MSGSL=OFF -DSEAL_USE_ZLIB=OFF -DSEAL_USE_ZSTD=OFF -DSEAL_BUILD_EXAMPLES=ON
+  cmake -S . -B build -DSEAL_USE_MSGSL=OFF -DSEAL_USE_ZLIB=OFF -DSEAL_USE_ZSTD=OFF
   cmake --build build
   cd ..
 
   # Run the setup.py
   python3 setup.py build_ext -i
   ```
+  Option: `-DSEAL_BUILD_EXAMPLES=ON` and [more](https://github.com/microsoft/SEAL#basic-cmake-options)
 
 * #### Windows
 
   Visual Studio 2019 or newer is required. And use the **x64 Native Tools Command Prompt for Visual Studio 2019** command prompt to configure and build the Microsoft SEAL library. It's usually can be found in `Start Menu`.
 
   ```shell
-  # Same as above
   # Build the SEAL library
-  cmake -S . -B build -G Ninja -DSEAL_USE_MSGSL=OFF -DSEAL_USE_ZLIB=OFF -DSEAL_USE_ZSTD=OFF -DSEAL_BUILD_EXAMPLES=ON
+  cmake -S . -B build -G Ninja -DSEAL_USE_MSGSL=OFF -DSEAL_USE_ZLIB=OFF -DSEAL_USE_ZSTD=OFF
   cmake --build build
 
   # Run the setup.py
