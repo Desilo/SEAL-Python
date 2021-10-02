@@ -23,24 +23,21 @@ This is a python binding for the Microsoft SEAL library.
   Clang++ (>= 5.0) or GNU G++ (>= 6.0), CMake (>= 3.12)
 
   ```shell
-  # Optional
   sudo apt-get install git build-essential cmake python3 python3-dev python3-pip
 
-  # Get the repository or download from the releases
   git clone https://github.com/Huelse/SEAL-Python.git
   cd SEAL-Python
 
-  # Numpy is essential
   pip3 install -r requirements.txt
 
   # Init the SEAL and pybind11
   git submodule update --init --recursive
-  # Get the newest repositories (unnecessary)
+  # Dev option
   # git submodule update --remote
 
   # Build the SEAL lib
   cd SEAL
-  cmake -S . -B build -DSEAL_USE_MSGSL=OFF -DSEAL_USE_ZLIB=OFF -DSEAL_USE_ZSTD=OFF
+  cmake -S . -B build -DSEAL_USE_MSGSL=OFF -DSEAL_USE_ZLIB=OFF -DSEAL_USE_ZSTD=OFF -DSEAL_BUILD_EXAMPLES=ON
   cmake --build build
   cd ..
 
@@ -50,12 +47,12 @@ This is a python binding for the Microsoft SEAL library.
 
 * #### Windows
 
-  Visual Studio 2019 or newer is required. And use the **x64 Native Tools Command Prompt for Visual Studio 2019**  command prompt to configure and build the Microsoft SEAL library. It's usually can be found in your Start Menu.
+  Visual Studio 2019 or newer is required. And use the **x64 Native Tools Command Prompt for Visual Studio 2019** command prompt to configure and build the Microsoft SEAL library. It's usually can be found in `Start Menu`.
 
   ```shell
   # Same as above
   # Build the SEAL library
-  cmake -S . -B build -G Ninja -DSEAL_USE_MSGSL=OFF -DSEAL_USE_ZLIB=OFF -DSEAL_USE_ZSTD=OFF
+  cmake -S . -B build -G Ninja -DSEAL_USE_MSGSL=OFF -DSEAL_USE_ZLIB=OFF -DSEAL_USE_ZSTD=OFF -DSEAL_BUILD_EXAMPLES=ON
   cmake --build build
 
   # Run the setup.py
