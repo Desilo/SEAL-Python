@@ -424,8 +424,12 @@ PYBIND11_MODULE(seal, m)
 		.def("encrypt", [](const Encryptor &encryptor, const Plaintext &plain){
 			Ciphertext encrypted;
 			encryptor.encrypt(plain, encrypted);
-			return encrypted;
-		});
+			return encrypted; })
+		.def("encrypt_symmetric", [](const Encryptor &encryptor, const Plaintext &plain)
+			 {
+			Ciphertext encrypted;
+			encryptor.encrypt_symmetric(plain, encrypted);
+			return encrypted; });
 		// symmetric
 
 	// evaluator.h
