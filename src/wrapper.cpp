@@ -384,6 +384,15 @@ PYBIND11_MODULE(seal, m)
 		})
 		;
 
+	// serializable.h
+	py::class_<Serializable<GaloisKeys>>(m, "Serializable<GaloisKeys>")
+		.def("save", [](const Serializable<GaloisKeys> &gk, const std::string &path){
+			std::ofstream out(path, std::ofstream::binary);
+			gk.save(out);
+			out.close();
+		})
+		;
+
 	// keygenerator.h
 	py::class_<KeyGenerator>(m, "KeyGenerator")
 		.def(py::init<const SEALContext &>())
@@ -407,7 +416,11 @@ PYBIND11_MODULE(seal, m)
 			GaloisKeys gk;
 			keygen.create_galois_keys(gk);
 			return gk;
-		});
+		})
+		.def("create_serializable_galois_keys", [](KeyGenerator &keygen){
+			return keygen.create_galois_keys();
+		})
+		;
 
 	// encryptor.h
 	py::class_<Encryptor>(m, "Encryptor")
