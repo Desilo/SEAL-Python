@@ -385,11 +385,16 @@ PYBIND11_MODULE(seal, m)
 		;
 
 	// serializable.h
-	py::class_<Serializable<GaloisKeys>>(m, "Serializable<GaloisKeys>")
+	py::class_<Serializable<GaloisKeys>>(m, "SerializableGaloisKeys")
 		.def("save", [](const Serializable<GaloisKeys> &gk, const std::string &path){
 			std::ofstream out(path, std::ofstream::binary);
 			gk.save(out);
 			out.close();
+		})
+		.def("dumpb", [](const Serializable<GaloisKeys> &gk){
+			std::stringstream out(std::ios::binary | std::ios::out);
+			gk.save(out);
+			return py::bytes(out.str());
 		})
 		;
 
