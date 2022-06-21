@@ -12,7 +12,8 @@ RUN apt update && \
     mkdir -p ${SRC}
 
 # copy into container requirements and install them before rest of code
-RUN pip3 install numpy pybind11
+COPY ./requirements.txt ${SRC}/.
+RUN pip3 install -r ${SRC}/requirements.txt
 
 # copy everything into container now that requirements stage is complete
 COPY . ${SRC}

@@ -1,44 +1,47 @@
 import os
 import platform
-from glob import glob
-from setuptools import setup
+from setuptools import setup, Extension
 from distutils.sysconfig import get_python_inc
-from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-__version__ = "4.0.0"
 
-include_dirs = [get_python_inc(), 'pybind11/include', 'SEAL/native/src', 'SEAL/build/native/src']
+# python include dir
+py_include_dir = os.path.join(get_python_inc())
+# cpp flags
+cpp_args = ['-std=c++17']
+# include directories
+include_dirs = [py_include_dir, './pybind11/include', './SEAL/native/src', './SEAL/build/native/src']
+# library path
+extra_objects = ['./SEAL/build/lib/libseal-3.7.a']
+# available wrapper: src/wrapper.cpp, src/wrapper_with_pickle.cpp
+wrapper_file = 'src/wrapper.cpp'
 
-extra_objects = sorted(glob('SEAL/build/lib/*.lib') if platform.system() == "Windows" else glob('SEAL/build/lib/*.a'))
+if(platform.system() == "Windows"):
+    cpp_args[0] = '/std:c++latest'  # /std:c++1z
+    extra_objects[0] = './SEAL/build/lib/Release/seal-3.7.lib'
 
-cpp_args = ['/std:c++latest'] if platform.system() == "Windows" else ['-std=c++17']
-
-if len(extra_objects) < 1 or not os.path.exists(extra_objects[0]):
-    print('Not found the seal lib file, check the `SEAL/build/lib`')
-    exit(0)
+if not os.path.exists(extra_objects[0]):
+    print('Can not find the seal lib,')
+    print('Compile the seal lib first or check the path.')
+    exit(1)
 
 ext_modules = [
-    Pybind11Extension(
-        "seal",
-        sorted(glob('src/*.cpp')),
+    Extension(
+        name='seal',
+        sources=[wrapper_file, 'src/base64.cpp'],
         include_dirs=include_dirs,
+        language='c++',
         extra_compile_args=cpp_args,
         extra_objects=extra_objects,
-        define_macros = [('VERSION_INFO', __version__)],
     ),
 ]
 
 setup(
     name='seal',
+    version='3.7',
     author='Desilo',
     author_email='engineering.dev@desilo.ai',
     description='Python wrapper for the Microsoft SEAL',
     url='https://github.com/Desilo/SEAL-Python',
     license='MIT',
-    version=__version__,
-    long_description="",
     ext_modules=ext_modules,
-    cmdclass={"build_ext": build_ext},
-    zip_safe=False,
-    python_requires=">=3.6",
 )
