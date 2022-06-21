@@ -6,6 +6,7 @@
 #include "base64.h"
 #include <iostream>
 #include <fstream>
+#include <type_traits>
 
 using namespace seal;
 
@@ -13,6 +14,60 @@ namespace py = pybind11;
 
 PYBIND11_MAKE_OPAQUE(std::vector<double>);
 PYBIND11_MAKE_OPAQUE(std::vector<std::int64_t>);
+
+template <typename T, typename = void>
+struct HasParms : std::false_type { };
+
+template <typename T>
+struct HasParms <T, decltype((void)T::parms, void())> : std::true_type { };
+
+template <class T>
+py::tuple serialize(T &c)
+{
+	if (!HasParms<T>::value)
+		throw std::runtime_error("E001: Invalid state! set parms first.");
+
+	// EncryptionParameters
+	std::stringstream out_stream1(std::ios::binary | std::ios::out);
+	// if parms exists
+	c.parms.save(out_stream1);
+	std::string str_buf1 = out_stream1.str();
+	std::string encoded_str1 = base64_encode(reinterpret_cast<const unsigned char *>(str_buf1.c_str()), (unsigned int)str_buf1.length());
+
+	// T
+	std::stringstream out_stream2(std::ios::binary | std::ios::out);
+	c.save(out_stream2);
+	std::string str_buf2 = out_stream2.str();
+	std::string encoded_str2 = base64_encode(reinterpret_cast<const unsigned char *>(str_buf2.c_str()), (unsigned int)str_buf2.length());
+
+	return py::make_tuple(encoded_str1, encoded_str2);
+}
+
+template <class T>
+T deserialize(py::tuple t)
+{
+	if (t.size() != 2)
+		throw std::runtime_error("E002: Invalid state!");
+
+	// EncryptionParameters
+	std::string encoded_str1 = t[0].cast<std::string>();
+	std::string decoded_str1 = base64_decode(encoded_str1);
+	std::stringstream in_stream1(std::ios::binary | std::ios::in);
+	in_stream1.str(decoded_str1);
+	EncryptionParameters parms;
+	parms.load(in_stream1);
+	SEALContext context(parms);
+
+	// T
+	std::string encoded_str2 = t[1].cast<std::string>();
+	std::string decoded_str2 = base64_decode(encoded_str2);
+	std::stringstream in_stream2(std::ios::binary | std::ios::in);
+	in_stream2.str(decoded_str2);
+	T c;
+	c.load(context, in_stream2);
+
+	return c;
+}
 
 PYBIND11_MODULE(seal, m)
 {
@@ -49,16 +104,6 @@ PYBIND11_MODULE(seal, m)
 			parms.load(in);
 			in.close();
 		})
-		.def("dumpb", [](const EncryptionParameters &parms){
-			std::stringstream out(std::ios::binary | std::ios::out);
-			parms.save(out);
-			return py::bytes(out.str());
-		})
-		.def("loadb", [](EncryptionParameters &parms, const py::bytes &bytes){
-			std::stringstream in(bytes, std::ios::binary | std::ios::in);
-			parms.load(in);
-		})
-		// remove pickle support?
 		.def(py::pickle(
 			[](const EncryptionParameters &parms){
 				std::stringstream out_stream(std::ios::binary | std::ios::out);
@@ -70,7 +115,7 @@ PYBIND11_MODULE(seal, m)
 			[](py::tuple t){
 				if (t.size() != 1)
                 	throw std::runtime_error("E002: Invalid state!");
-				
+
 				std::string encoded_str = t[0].cast<std::string>();
 				std::string decoded_str = base64_decode(encoded_str);
 				std::stringstream in_stream(std::ios::binary | std::ios::in);
@@ -191,19 +236,13 @@ PYBIND11_MODULE(seal, m)
 			plain.load(context, in);
 			in.close();
 		})
+		.def("set_parms", [](Plaintext &plain, const EncryptionParameters &parms){
+			plain.parms = parms;
+		})
 		.def("save_size", [](const Plaintext &plain){
 			return plain.save_size();
 		})
-		.def("dumpb", [](const Plaintext &plain){
-			std::stringstream out(std::ios::binary | std::ios::out);
-			plain.save(out);
-			return py::bytes(out.str());
-		})
-		.def("loadb", [](Plaintext &plain, const SEALContext &context, const py::bytes &bytes){
-			std::stringstream in(bytes, std::ios::binary | std::ios::in);
-			plain.load(context, in);
-		})
-		;
+		.def(py::pickle(&serialize<Plaintext>, &deserialize<Plaintext>));
 
 	// ciphertext.h
 	py::class_<Ciphertext>(m, "Ciphertext")
@@ -233,19 +272,13 @@ PYBIND11_MODULE(seal, m)
 			cipher.load(context, in);
 			in.close();
 		})
+		.def("set_parms", [](Ciphertext &cipher, const EncryptionParameters &parms){
+			cipher.parms = parms;
+		})
 		.def("save_size", [](const Ciphertext &cipher){
 			return cipher.save_size();
 		})
-		.def("dumpb", [](const Ciphertext &cipher){
-			std::stringstream out(std::ios::binary | std::ios::out);
-			cipher.save(out);
-			return py::bytes(out.str());
-		})
-		.def("loadb", [](Ciphertext &cipher, const SEALContext &context, const py::bytes &bytes){
-			std::stringstream in(bytes, std::ios::binary | std::ios::in);
-			cipher.load(context, in);
-		})
-		;
+		.def(py::pickle(&serialize<Ciphertext>, &deserialize<Ciphertext>));
 
 	// secretkey.h
 	py::class_<SecretKey>(m, "SecretKey")
@@ -262,16 +295,10 @@ PYBIND11_MODULE(seal, m)
 			sk.load(context, in);
 			in.close();
 		})
-		.def("dumpb", [](const SecretKey &sk){
-			std::stringstream out(std::ios::binary | std::ios::out);
-			sk.save(out);
-			return py::bytes(out.str());
+		.def("set_parms", [](SecretKey &sk, const EncryptionParameters &parms){
+			sk.parms = parms;
 		})
-		.def("loadb", [](SecretKey &sk, const SEALContext &context, const py::bytes &bytes){
-			std::stringstream in(bytes, std::ios::binary | std::ios::in);
-			sk.load(context, in);
-		})
-		;
+		.def(py::pickle(&serialize<SecretKey>, &deserialize<SecretKey>));
 
 	// publickey.h
 	py::class_<PublicKey>(m, "PublicKey")
@@ -288,16 +315,10 @@ PYBIND11_MODULE(seal, m)
 			pk.load(context, in);
 			in.close();
 		})
-		.def("dumpb", [](const PublicKey &pk){
-			std::stringstream out(std::ios::binary | std::ios::out);
-			pk.save(out);
-			return py::bytes(out.str());
+		.def("set_parms", [](PublicKey &pk, const EncryptionParameters &parms){
+			pk.parms = parms;
 		})
-		.def("loadb", [](PublicKey &pk, const SEALContext &context, const py::bytes &bytes){
-			std::stringstream in(bytes, std::ios::binary | std::ios::in);
-			pk.load(context, in);
-		})
-		;
+		.def(py::pickle(&serialize<PublicKey>, &deserialize<PublicKey>));
 
 	// kswitchkeys.h
 	py::class_<KSwitchKeys>(m, "KSwitchKeys")
@@ -315,16 +336,10 @@ PYBIND11_MODULE(seal, m)
 			ksk.load(context, in);
 			in.close();
 		})
-		.def("dumpb", [](const KSwitchKeys &ksk){
-			std::stringstream out(std::ios::binary | std::ios::out);
-			ksk.save(out);
-			return py::bytes(out.str());
+		.def("set_parms", [](KSwitchKeys &ksk, const EncryptionParameters &parms){
+			ksk.parms = parms;
 		})
-		.def("loadb", [](KSwitchKeys &ksk, const SEALContext &context, const py::bytes &bytes){
-			std::stringstream in(bytes, std::ios::binary | std::ios::in);
-			ksk.load(context, in);
-		})
-		;
+		.def(py::pickle(&serialize<KSwitchKeys>, &deserialize<KSwitchKeys>));
 
 	// relinKeys.h
 	py::class_<RelinKeys, KSwitchKeys>(m, "RelinKeys")
@@ -332,8 +347,6 @@ PYBIND11_MODULE(seal, m)
 		.def(py::init<const RelinKeys::KSwitchKeys &>())
 		.def("size", &RelinKeys::KSwitchKeys::size)
 		.def("parms_id", py::overload_cast<>(&RelinKeys::KSwitchKeys::parms_id, py::const_), py::return_value_policy::reference)
-		.def_static("get_index", &RelinKeys::get_index)
-		.def("has_key", &RelinKeys::has_key)
 		.def("save", [](const RelinKeys &rk, const std::string &path){
 			std::ofstream out(path, std::ofstream::binary);
 			rk.save(out);
@@ -344,16 +357,12 @@ PYBIND11_MODULE(seal, m)
 			rk.load(context, in);
 			in.close();
 		})
-		.def("dumpb", [](const RelinKeys &rk){
-			std::stringstream out(std::ios::binary | std::ios::out);
-			rk.save(out);
-			return py::bytes(out.str());
+		.def_static("get_index", &RelinKeys::get_index)
+		.def("has_key", &RelinKeys::has_key)
+		.def("set_parms", [](RelinKeys &rk, const EncryptionParameters &parms){
+			rk.parms = parms;
 		})
-		.def("loadb", [](RelinKeys &rk, const SEALContext &context, const py::bytes &bytes){
-			std::stringstream in(bytes, std::ios::binary | std::ios::in);
-			rk.load(context, in);
-		})
-		;
+		.def(py::pickle(&serialize<RelinKeys>, &deserialize<RelinKeys>));
 
 	// galoisKeys.h
 	py::class_<GaloisKeys, KSwitchKeys>(m, "GaloisKeys")
@@ -361,8 +370,6 @@ PYBIND11_MODULE(seal, m)
 		.def(py::init<const GaloisKeys::KSwitchKeys &>())
 		.def("size", &GaloisKeys::KSwitchKeys::size)
 		.def("parms_id", py::overload_cast<>(&GaloisKeys::KSwitchKeys::parms_id, py::const_), py::return_value_policy::reference)
-		.def_static("get_index", &GaloisKeys::get_index)
-		.def("has_key", &GaloisKeys::has_key)
 		.def("save", [](const GaloisKeys &gk, const std::string &path){
 			std::ofstream out(path, std::ofstream::binary);
 			gk.save(out);
@@ -373,16 +380,12 @@ PYBIND11_MODULE(seal, m)
 			gk.load(context, in);
 			in.close();
 		})
-		.def("dumpb", [](const GaloisKeys &gk){
-			std::stringstream out(std::ios::binary | std::ios::out);
-			gk.save(out);
-			return py::bytes(out.str());
+		.def_static("get_index", &GaloisKeys::get_index)
+		.def("has_key", &GaloisKeys::has_key)
+		.def("set_parms", [](GaloisKeys &gk, const EncryptionParameters &parms){
+			gk.parms = parms;
 		})
-		.def("loadb", [](GaloisKeys &gk, const SEALContext &context, const py::bytes &bytes){
-			std::stringstream in(bytes, std::ios::binary | std::ios::in);
-			gk.load(context, in);
-		})
-		;
+		.def(py::pickle(&serialize<GaloisKeys>, &deserialize<GaloisKeys>));
 
 	// keygenerator.h
 	py::class_<KeyGenerator>(m, "KeyGenerator")
@@ -486,7 +489,7 @@ PYBIND11_MODULE(seal, m)
 		.def("mod_switch_to_next_inplace", [](Evaluator &evaluator, Ciphertext &encrypted){
 			evaluator.mod_switch_to_next_inplace(encrypted);
 		})
-		.def("mod_switch_to_next_inplace", py::overload_cast<Plaintext &>(&Evaluator::mod_switch_to_next_inplace, py::const_))
+		.def("mod_switch_to_next_inplace", py::overload_cast<Plaintext &>(&Evaluator::mod_switch_to_next_inplace))
 		.def("mod_switch_to_next", [](Evaluator &evaluator, const Plaintext &plain){
 			Plaintext destination;
 			evaluator.mod_switch_to_next(plain, destination);
@@ -500,7 +503,7 @@ PYBIND11_MODULE(seal, m)
 			evaluator.mod_switch_to(encrypted, parms_id, destination);
 			return destination;
 		})
-		.def("mod_switch_to_inplace", py::overload_cast<Plaintext &, parms_id_type>(&Evaluator::mod_switch_to_inplace, py::const_))
+		.def("mod_switch_to_inplace", py::overload_cast<Plaintext &, parms_id_type>(&Evaluator::mod_switch_to_inplace))
 		.def("mod_switch_to", [](Evaluator &evaluator, const Plaintext &plain, parms_id_type parms_id){
 			Plaintext destination;
 			evaluator.mod_switch_to(plain, parms_id, destination);
@@ -563,7 +566,7 @@ PYBIND11_MODULE(seal, m)
 			evaluator.transform_to_ntt(plain, parms_id, destination_ntt);
 			return destination_ntt;
 		})
-		.def("transform_to_ntt_inplace", py::overload_cast<Ciphertext &>(&Evaluator::transform_to_ntt_inplace, py::const_))
+		.def("transform_to_ntt_inplace", py::overload_cast<Ciphertext &>(&Evaluator::transform_to_ntt_inplace))
 		.def("transform_to_ntt", [](Evaluator &evaluator, const Ciphertext &encrypted){
 			Ciphertext destination_ntt;
 			evaluator.transform_to_ntt(encrypted, destination_ntt);
