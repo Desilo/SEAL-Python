@@ -42,4 +42,5 @@ seal.egg-info
 *.pyd
 *.pyc
 temp
-env
+.idea
+*.bin
