@@ -227,6 +227,15 @@ PYBIND11_MODULE(seal, m)
             plain.load(context, in);
             in.close();
         })
+        .def("dumpb", [](const Plaintext &plain){
+			std::stringstream out(std::ios::binary | std::ios::out);
+			plain.save(out);
+			return py::bytes(out.str());
+		})
+		.def("loadb", [](Plaintext &plain, const SEALContext &context, const py::bytes &bytes){
+			std::stringstream in(bytes, std::ios::binary | std::ios::in);
+			plain.load(context, in);
+		})
         .def("save_size", [](const Plaintext &plain){
             return plain.save_size();
         })
@@ -264,6 +273,15 @@ PYBIND11_MODULE(seal, m)
             cipher.load(context, in);
             in.close();
         })
+		.def("dumpb", [](const Ciphertext &cipher){
+			std::stringstream out(std::ios::binary | std::ios::out);
+			cipher.save(out);
+			return py::bytes(out.str());
+		})
+		.def("loadb", [](Ciphertext &cipher, const SEALContext &context, const py::bytes &bytes){
+			std::stringstream in(bytes, std::ios::binary | std::ios::in);
+			cipher.load(context, in);
+		})
         .def("save_size", [](const Ciphertext &cipher){
             return cipher.save_size();
         })
@@ -288,6 +306,15 @@ PYBIND11_MODULE(seal, m)
             sk.load(context, in);
             in.close();
         })
+        .def("dumpb", [](const SecretKey &sk){
+			std::stringstream out(std::ios::binary | std::ios::out);
+			sk.save(out);
+			return py::bytes(out.str());
+		})
+		.def("loadb", [](SecretKey &sk, const SEALContext &context, const py::bytes &bytes){
+			std::stringstream in(bytes, std::ios::binary | std::ios::in);
+			sk.load(context, in);
+		})
         .def("to_string", [](const SecretKey &secret){
             std::stringstream out(std::ios::binary | std::ios::out);
             secret.save(out);
@@ -309,6 +336,15 @@ PYBIND11_MODULE(seal, m)
             pk.load(context, in);
             in.close();
         })
+		.def("dumpb", [](const PublicKey &pk){
+			std::stringstream out(std::ios::binary | std::ios::out);
+			pk.save(out);
+			return py::bytes(out.str());
+		})
+		.def("loadb", [](PublicKey &pk, const SEALContext &context, const py::bytes &bytes){
+			std::stringstream in(bytes, std::ios::binary | std::ios::in);
+			pk.load(context, in);
+		})
         .def("to_string", [](const PublicKey &public_){
             std::stringstream out(std::ios::binary | std::ios::out);
             public_.save(out);
@@ -330,7 +366,16 @@ PYBIND11_MODULE(seal, m)
             std::ifstream in(path, std::ios::binary);
             ksk.load(context, in);
             in.close();
-        });
+        })
+        .def("dumpb", [](const KSwitchKeys &ksk){
+			std::stringstream out(std::ios::binary | std::ios::out);
+			ksk.save(out);
+			return py::bytes(out.str());
+		})
+		.def("loadb", [](KSwitchKeys &ksk, const SEALContext &context, const py::bytes &bytes){
+			std::stringstream in(bytes, std::ios::binary | std::ios::in);
+			ksk.load(context, in);
+		});
 
     // relinkeys.h
     py::class_<RelinKeys, KSwitchKeys>(m, "RelinKeys")
@@ -350,6 +395,15 @@ PYBIND11_MODULE(seal, m)
             rk.load(context, in);
             in.close();
         })
+		.def("dumpb", [](const RelinKeys &rk){
+			std::stringstream out(std::ios::binary | std::ios::out);
+			rk.save(out);
+			return py::bytes(out.str());
+		})
+		.def("loadb", [](RelinKeys &rk, const SEALContext &context, const py::bytes &bytes){
+			std::stringstream in(bytes, std::ios::binary | std::ios::in);
+			rk.load(context, in);
+		})
         .def("to_string", [](const RelinKeys &relin){
             std::stringstream out(std::ios::binary | std::ios::out);
             relin.save(out);
@@ -374,6 +428,15 @@ PYBIND11_MODULE(seal, m)
             gk.load(context, in);
             in.close();
         })
+		.def("dumpb", [](const GaloisKeys &gk){
+			std::stringstream out(std::ios::binary | std::ios::out);
+			gk.save(out);
+			return py::bytes(out.str());
+		})
+		.def("loadb", [](GaloisKeys &gk, const SEALContext &context, const py::bytes &bytes){
+			std::stringstream in(bytes, std::ios::binary | std::ios::in);
+			gk.load(context, in);
+		})
         .def("to_string", [](const GaloisKeys &galois){
             std::stringstream out(std::ios::binary | std::ios::out);
             galois.save(out);
