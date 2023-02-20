@@ -19,7 +19,7 @@ PYBIND11_MODULE(seal, m)
     py::class_<PyBindWrapper>(m, "PyBindWrapper")
         .def(py::init<>())
         .def("create_pool", &PyBindWrapper::create_pool)
-        .def("destroy_pool", &PyBindWrapper::destroy_pool)
+        .def("destroy_pool", &PyBindWrapper::destroy_pool);
 
     py::bind_vector<std::vector<double>>(m, "VectorDouble", py::buffer_protocol());
     py::bind_vector<std::vector<std::int64_t>>(m, "VectorInt", py::buffer_protocol());
