@@ -16,6 +16,11 @@ PYBIND11_MODULE(seal, m)
     m.doc() = "Microsoft SEAL for Python, from https://github.com/Huelse/SEAL-Python";
     m.attr("__version__")  = "4.0.0";
 
+    py::class_<DesiloCustomMemoryManager>(m, "DesiloCustomMemoryManager")
+        .def(py::init<>())
+        .def("create_custom_pool", &DesiloCustomMemoryManager::create_custom_pool)
+        .def("delete_custom_pool", &DesiloCustomMemoryManager::delete_custom_pool);
+
     py::bind_vector<std::vector<double>>(m, "VectorDouble", py::buffer_protocol());
     py::bind_vector<std::vector<std::int64_t>>(m, "VectorInt", py::buffer_protocol());
 
