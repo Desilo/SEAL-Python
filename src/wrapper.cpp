@@ -18,8 +18,8 @@ PYBIND11_MODULE(seal, m)
 
     py::class_<DesiloCustomMemoryManager>(m, "DesiloCustomMemoryManager")
         .def(py::init<>())
-        .def("initialize_memory_pool", &DesiloCustomMemoryManager::initialize_memory_pool)
-        .def("release_memory_pool", &DesiloCustomMemoryManager::release_memory_pool);
+        .def("create_custom_pool", &DesiloCustomMemoryManager::create_custom_pool)
+        .def("delete_custom_pool", &DesiloCustomMemoryManager::delete_custom_pool);
 
     py::bind_vector<std::vector<double>>(m, "VectorDouble", py::buffer_protocol());
     py::bind_vector<std::vector<std::int64_t>>(m, "VectorInt", py::buffer_protocol());
