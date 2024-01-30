@@ -5,7 +5,7 @@ from setuptools import setup
 from distutils.sysconfig import get_python_inc
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-__version__ = "4.0.0"
+__version__ = "4.0.1"
 
 include_dirs = [get_python_inc(), 'pybind11/include', 'SEAL/native/src', 'SEAL/build/native/src']
 
